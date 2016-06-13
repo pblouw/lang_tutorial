@@ -49,7 +49,15 @@ class EmbeddingModel(object):
             probe = vocab.deconvolve(vocab.neg_i[abs(position+1)], v)
         self.rank_words(np.dot(vocab.vectors, probe))
 
-    def get_verb_neighbor(self, word, dep):
+    def get_order_neighbors(self, word):
+        probe = self.order_vectors[vocab.word_to_index[word], :]
+        self.rank_words(np.dot(self.order_vectors, probe))
+
+    def get_verb_neighbors(self, word):
+        probe = self.syntax_vectors[vocab.word_to_index[word], :]
+        self.rank_words(np.dot(self.syntax_vectors, probe))
+
+    def get_verb_completions(self, word, dep):
         v = self.syntax_vectors[vocab.word_to_index[word], :]
         probe = vocab.deconvolve(vocab.deps[dep], v)
         self.rank_words(np.dot(vocab.vectors, probe))

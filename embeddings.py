@@ -41,7 +41,7 @@ class EmbeddingModel(object):
         probe = self.context_vectors[vocab.word_to_index[word], :]
         self.rank_words(np.dot(self.context_vectors, probe))
 
-    def get_completions(self, word, position):
+    def get_order_completions(self, word, position):
         v = self.order_vectors[vocab.word_to_index[word], :]
         if position > 0:
             probe = vocab.deconvolve(vocab.pos_i[position-1], v)
@@ -53,14 +53,35 @@ class EmbeddingModel(object):
         probe = self.order_vectors[vocab.word_to_index[word], :]
         self.rank_words(np.dot(self.order_vectors, probe))
 
-    def get_verb_neighbors(self, word):
-        probe = self.syntax_vectors[vocab.word_to_index[word], :]
-        self.rank_words(np.dot(self.syntax_vectors, probe))
-
     def get_verb_completions(self, word, dep):
         v = self.syntax_vectors[vocab.word_to_index[word], :]
         probe = vocab.deconvolve(vocab.deps[dep], v)
         self.rank_words(np.dot(vocab.vectors, probe))
+
+    def get_verb_neighbors(self, word):
+        probe = self.syntax_vectors[vocab.word_to_index[word], :]
+        self.rank_words(np.dot(self.syntax_vectors, probe))
+
+    def get_resonants(self, phrase):
+        probe = self.get_vector_encoding(phrase)
+        self.rank_words(np.dot(self.order_vectors, probe))
+
+    def get_vector_encoding(self, phrase):
+        words = phrase.split()
+        index = words.index('__')
+        probe = np.zeros(self.dim)
+        for word in words:
+            if word == '__':
+                continue
+            w = vocab[word].v 
+            if words.index(word) < index:
+                p = vocab.neg_i[index-words.index(word)-1]
+                probe += vocab.convolve(w, p)
+            if words.index(word) > index:
+                p = vocab.pos_i[words.index(word)-index-1]
+                probe += vocab.convolve(w, p)
+       
+        return vocab.normalize(probe)
 
 
 class RandomIndexing(EmbeddingModel):
@@ -188,7 +209,8 @@ class RandomIndexing(EmbeddingModel):
         self.index_to_word = {idx: word for idx, word in enumerate(wordlist)}
 
         global vocab
-        vocab = Vocabulary(dim, wordlist)
+        if vocab == None:   
+            vocab = Vocabulary(dim, wordlist)
 
         if 'context' in flags:
             self.context_vectors = np.zeros((len(wordlist), self.dim))

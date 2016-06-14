@@ -45,7 +45,7 @@ class Vocabulary(object):
         return np.fft.ifft(fft_unit).real
 
     def build_tags(self):
-        self.win = 2
+        self.win = 3
         deps = set(['nsubj', 'dobj'])
         self.pos_i = [self.unitary_vector() for i in range(self.win)]
         self.neg_i = [self.unitary_vector() for i in range(self.win)]
